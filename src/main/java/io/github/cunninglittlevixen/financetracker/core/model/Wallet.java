@@ -38,6 +38,52 @@ public class Wallet {
         return name != null && !name.isBlank() && categories.containsKey(keyOf(name));
     }
 
+    public void renameCategory(String oldName, String newName) {
+        requireCategory(oldName);
+        Category renamed = new Category(newName);
+        String oldKey = keyOf(oldName);
+        if (!renamed.key().equals(oldKey) && categories.containsKey(renamed.key())) {
+            throw new ValidationException("Категория «" + renamed.name() + "» уже существует.");
+        }
+
+        Map<String, Category> updated = new LinkedHashMap<>();
+        for (Map.Entry<String, Category> entry : categories.entrySet()) {
+            if (entry.getKey().equals(oldKey)) {
+                updated.put(renamed.key(), renamed);
+            } else {
+                updated.put(entry.getKey(), entry.getValue());
+            }
+        }
+        categories.clear();
+        categories.putAll(updated);
+
+        for (int i = 0; i < operations.size(); i++) {
+            Operation op = operations.get(i);
+            if (belongsTo(op, oldKey)) {
+                operations.set(i, new Operation(op.type(), renamed.name(), op.amount(),
+                        op.date(), op.description(), op.counterparty()));
+            }
+        }
+
+        Budget budget = budgets.remove(oldKey);
+        if (budget != null) {
+            budgets.put(renamed.key(), new Budget(renamed.name(), budget.limit()));
+        }
+    }
+
+
+    public void removeCategory(String name) {
+        requireCategory(name);
+        String key = keyOf(name);
+        long count = operations.stream().filter(op -> belongsTo(op, key)).count();
+        if (count > 0) {
+            throw new ValidationException("Нельзя удалить категорию «" + categories.get(key).name()
+                    + "»: в ней операций: " + count + ".");
+        }
+        categories.remove(key);
+        budgets.remove(key);
+    }
+
     public void addOperation(Operation operation) {
         requireCategory(operation.category());
         operations.add(operation);
@@ -46,6 +92,14 @@ public class Wallet {
     public void setBudget(Budget budget) {
         requireCategory(budget.category());
         budgets.put(keyOf(budget.category()), budget);
+    }
+
+    public void removeBudget(String category) {
+        requireCategory(category);
+        if (budgets.remove(keyOf(category)) == null) {
+            throw new ValidationException(
+                    "Для категории «" + categories.get(keyOf(category)).name() + "» бюджет не задан.");
+        }
     }
 
     public Optional<Budget> getBudget(String category) {
@@ -89,6 +143,10 @@ public class Wallet {
                 .map(Category::name)
                 .collect(Collectors.joining(", ")) + ".";
         return "Категория «" + name + "» не найдена. " + available;
+    }
+
+    private static boolean belongsTo(Operation operation, String key) {
+        return keyOf(operation.category()).equals(key);
     }
 
     private static String keyOf(String name) {
