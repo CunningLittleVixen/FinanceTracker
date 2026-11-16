@@ -15,6 +15,7 @@ import io.github.cunninglittlevixen.financetracker.core.service.CategoryService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
 
 class CategoryCommandsTest {
 
