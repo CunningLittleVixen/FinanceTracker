@@ -42,6 +42,13 @@ public class Session {
         return wallet;
     }
 
+    public void requireLoggedOut() {
+        if (user != null) {
+            throw new ValidationException(
+                    "Вы уже вошли как " + user.login() + ". Сначала выполните logout.");
+        }
+    }
+
     private void requireLoggedIn() {
         if (user == null) {
             throw new ValidationException("Сначала войдите в систему: login или register.");
