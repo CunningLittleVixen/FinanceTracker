@@ -26,3 +26,7 @@ data/
 # JVM crash logs
 hs_err_pid*
 replay_pid*
+
+# Отчёты, сохранённые командой report --out
+report*.txt
+reports/
