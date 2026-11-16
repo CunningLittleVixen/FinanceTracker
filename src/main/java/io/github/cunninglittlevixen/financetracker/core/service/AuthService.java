@@ -3,7 +3,6 @@ package io.github.cunninglittlevixen.financetracker.core.service;
 import io.github.cunninglittlevixen.financetracker.core.exception.ValidationException;
 import io.github.cunninglittlevixen.financetracker.core.model.User;
 import io.github.cunninglittlevixen.financetracker.core.repository.UserRepository;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 public class AuthService {
@@ -21,7 +20,7 @@ public class AuthService {
     }
 
     public User register(String login, String password) {
-        String normalized = normalize(login);
+        String normalized = User.normalizeLogin(login);
         if (normalized.isEmpty()) {
             throw new ValidationException("Логин не указан.");
         }
@@ -42,15 +41,11 @@ public class AuthService {
     }
 
     public User login(String login, String password) {
-        User user = users.findByLogin(normalize(login))
+        User user = users.findByLogin(User.normalizeLogin(login))
                 .orElseThrow(() -> new ValidationException(LOGIN_FAILED));
         if (!hasher.verify(password, user.passwordHash())) {
             throw new ValidationException(LOGIN_FAILED);
         }
         return user;
-    }
-
-    private static String normalize(String login) {
-        return login == null ? "" : login.trim().toLowerCase(Locale.ROOT);
     }
 }

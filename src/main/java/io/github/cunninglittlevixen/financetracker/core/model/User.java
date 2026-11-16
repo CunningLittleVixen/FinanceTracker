@@ -1,6 +1,7 @@
 package io.github.cunninglittlevixen.financetracker.core.model;
 
 import io.github.cunninglittlevixen.financetracker.core.exception.ValidationException;
+import java.util.Locale;
 
 public record User(String login, String passwordHash) {
 
@@ -12,5 +13,9 @@ public record User(String login, String passwordHash) {
             throw new ValidationException("Хеш пароля не указан.");
         }
         login = login.trim();
+    }
+
+    public static String normalizeLogin(String login) {
+        return login == null ? "" : login.trim().toLowerCase(Locale.ROOT);
     }
 }
