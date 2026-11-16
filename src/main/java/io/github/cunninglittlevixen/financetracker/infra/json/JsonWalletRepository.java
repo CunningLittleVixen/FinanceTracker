@@ -7,7 +7,6 @@ import io.github.cunninglittlevixen.financetracker.core.repository.WalletReposit
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -46,16 +45,7 @@ public class JsonWalletRepository implements WalletRepository {
 
     @Override
     public void save(Wallet wallet) {
-        Path file = fileFor(wallet.getOwner());
-        Path temp = file.resolveSibling(file.getFileName() + ".tmp");
-        try {
-            Files.createDirectories(directory);
-            mapper.writeValue(temp.toFile(), WalletMapper.toData(wallet));
-            Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            deleteQuietly(temp);
-            throw new StorageException("Не удалось сохранить кошелёк: " + file, e);
-        }
+        JsonFiles.writeAtomically(mapper, fileFor(wallet.getOwner()), WalletMapper.toData(wallet));
     }
 
     private Path fileFor(String login) {
@@ -63,13 +53,5 @@ public class JsonWalletRepository implements WalletRepository {
             throw new StorageException("Недопустимый логин для имени файла: " + login);
         }
         return directory.resolve(login.toLowerCase(Locale.ROOT) + ".json");
-    }
-
-    private static void deleteQuietly(Path path) {
-        try {
-            Files.deleteIfExists(path);
-        } catch (IOException ignored) {
-            // временный файл не удалился, основной файл при этом цел
-        }
     }
 }
