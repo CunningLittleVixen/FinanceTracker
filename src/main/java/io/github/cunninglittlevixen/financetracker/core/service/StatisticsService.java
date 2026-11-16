@@ -8,14 +8,62 @@ import io.github.cunninglittlevixen.financetracker.core.model.Wallet;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class StatisticsService {
 
     public List<Operation> select(Wallet wallet, OperationFilter filter) {
+        return filterOperations(wallet, filter, resolveKeys(wallet, filter.categories()));
+    }
+
+    public BigDecimal totalIncome(Wallet wallet, OperationFilter filter) {
+        return sum(select(wallet, filter), OperationType.INCOME, null);
+    }
+
+    public BigDecimal totalExpense(Wallet wallet, OperationFilter filter) {
+        return sum(select(wallet, filter), OperationType.EXPENSE, null);
+    }
+
+    // NEW
+    public Summary summarize(Wallet wallet, OperationFilter filter) {
         Set<String> keys = resolveKeys(wallet, filter.categories());
+        List<Operation> selected = filterOperations(wallet, filter, keys);
+
+        Map<String, BigDecimal> incomeByCategory = new LinkedHashMap<>();
+        Map<String, BigDecimal> expenseByCategory = new LinkedHashMap<>();
+        List<BudgetStatus> statuses = new ArrayList<>();
+
+        for (Category category : wallet.getCategories()) {
+            String name = category.name();
+            BigDecimal income = sum(selected, OperationType.INCOME, category.key());
+            BigDecimal expense = sum(selected, OperationType.EXPENSE, category.key());
+            if (income.signum() > 0) {
+                incomeByCategory.put(name, income);
+            }
+            if (expense.signum() > 0) {
+                expenseByCategory.put(name, expense);
+            }
+            if (keys.isEmpty() || keys.contains(category.key())) {
+                wallet.getBudget(name).ifPresent(budget -> statuses.add(new BudgetStatus(
+                        name, budget.limit(), expense, budget.limit().subtract(expense))));
+            }
+        }
+
+        return new Summary(
+                sum(selected, OperationType.INCOME, null),
+                sum(selected, OperationType.EXPENSE, null),
+                incomeByCategory,
+                expenseByCategory,
+                statuses,
+                selected.isEmpty());
+    }
+
+    private List<Operation> filterOperations(
+            Wallet wallet, OperationFilter filter, Set<String> keys) {
         List<Operation> result = new ArrayList<>();
         for (Operation operation : wallet.getOperations()) {
             if (matches(operation, keys, filter)) {
@@ -25,18 +73,12 @@ public class StatisticsService {
         return result;
     }
 
-    public BigDecimal totalIncome(Wallet wallet, OperationFilter filter) {
-        return total(wallet, filter, OperationType.INCOME);
-    }
-
-    public BigDecimal totalExpense(Wallet wallet, OperationFilter filter) {
-        return total(wallet, filter, OperationType.EXPENSE);
-    }
-
-    private BigDecimal total(Wallet wallet, OperationFilter filter, OperationType type) {
+    private BigDecimal sum(List<Operation> operations, OperationType type, String categoryKey) {
         BigDecimal sum = BigDecimal.ZERO.setScale(2);
-        for (Operation operation : select(wallet, filter)) {
-            if (operation.type() == type) {
+        for (Operation operation : operations) {
+            boolean categoryMatches = categoryKey == null
+                    || new Category(operation.category()).key().equals(categoryKey);
+            if (operation.type() == type && categoryMatches) {
                 sum = sum.add(operation.amount());
             }
         }
