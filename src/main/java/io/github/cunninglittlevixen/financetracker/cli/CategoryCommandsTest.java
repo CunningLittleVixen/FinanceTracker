@@ -29,33 +29,33 @@ class CategoryCommandsTest {
     void addCategoryCreatesItAndConfirms() {
         fixture.run(add, "add-category Еда");
 
-        assertTrue(fixture.wallet.hasCategory("Еда"));
-        assertTrue(fixture.output().contains("«Еда» создана"));
+        Assertions.assertTrue(fixture.wallet.hasCategory("Еда"));
+        Assertions.assertTrue(fixture.output().contains("«Еда» создана"));
     }
 
     @Test
     void quotedNameKeepsSpaces() {
         fixture.run(add, "add-category \"Коммунальные услуги\"");
 
-        assertTrue(fixture.wallet.hasCategory("Коммунальные услуги"));
+        Assertions.assertTrue(fixture.wallet.hasCategory("Коммунальные услуги"));
     }
 
     @Test
     void nameWithSpacesWithoutQuotesShowsUsage() {
-        ValidationException e = assertThrows(ValidationException.class,
+        ValidationException e = Assertions.assertThrows(ValidationException.class,
                 () -> fixture.run(add, "add-category Коммунальные услуги"));
 
-        assertTrue(e.getMessage().contains("add-category <название>"));
+        Assertions.assertTrue(e.getMessage().contains("add-category <название>"));
     }
 
     @Test
     void duplicateCategoryIsRejected() {
         fixture.run(add, "add-category Еда");
 
-        ValidationException e = assertThrows(ValidationException.class,
+        ValidationException e = Assertions.assertThrows(ValidationException.class,
                 () -> fixture.run(add, "add-category еда"));
 
-        assertTrue(e.getMessage().contains("уже существует"));
+        Assertions.assertTrue(e.getMessage().contains("уже существует"));
     }
 
     @Test
@@ -67,10 +67,10 @@ class CategoryCommandsTest {
 
         fixture.run(rename, "rename-category Еда Продукты");
 
-        assertTrue(fixture.wallet.hasCategory("Продукты"));
-        assertEquals("Продукты", fixture.wallet.getOperations().get(0).category());
-        assertTrue(fixture.wallet.getBudget("Продукты").isPresent());
-        assertTrue(fixture.output().contains("переименована"));
+        Assertions.assertTrue(fixture.wallet.hasCategory("Продукты"));
+        Assertions.assertEquals("Продукты", fixture.wallet.getOperations().get(0).category());
+        Assertions.assertTrue(fixture.wallet.getBudget("Продукты").isPresent());
+        Assertions.assertTrue(fixture.output().contains("переименована"));
     }
 
     @Test
@@ -79,8 +79,8 @@ class CategoryCommandsTest {
 
         fixture.run(remove, "remove-category Такси");
 
-        assertFalse(fixture.wallet.hasCategory("Такси"));
-        assertTrue(fixture.output().contains("удалена"));
+        Assertions.assertFalse(fixture.wallet.hasCategory("Такси"));
+        Assertions.assertTrue(fixture.output().contains("удалена"));
     }
 
     @Test
@@ -89,16 +89,16 @@ class CategoryCommandsTest {
         fixture.wallet.addOperation(new Operation(OperationType.EXPENSE, "Еда",
                 new BigDecimal("300"), LocalDate.of(2020, 1, 1), null, null));
 
-        ValidationException e = assertThrows(ValidationException.class,
+        ValidationException e = Assertions.assertThrows(ValidationException.class,
                 () -> fixture.run(remove, "remove-category Еда"));
 
-        assertTrue(e.getMessage().contains("операций"));
-        assertTrue(fixture.wallet.hasCategory("Еда"));
+        Assertions.assertTrue(e.getMessage().contains("операций"));
+        Assertions.assertTrue(fixture.wallet.hasCategory("Еда"));
     }
 
     @Test
     void removeUnknownCategoryReportsMissingCategory() {
-        assertThrows(CategoryNotFoundException.class,
+        Assertions.assertThrows(CategoryNotFoundException.class,
                 () -> fixture.run(remove, "remove-category Кино"));
     }
 
@@ -111,24 +111,24 @@ class CategoryCommandsTest {
         fixture.run(list, "categories");
 
         String out = fixture.output();
-        assertTrue(out.contains("Категория"));
-        assertTrue(out.contains("Еда"));
-        assertTrue(out.contains("4,000.00"));
-        assertTrue(out.contains("Такси"));
+        Assertions.assertTrue(out.contains("Категория"));
+        Assertions.assertTrue(out.contains("Еда"));
+        Assertions.assertTrue(out.contains("4,000.00"));
+        Assertions.assertTrue(out.contains("Такси"));
     }
 
     @Test
     void emptyListSuggestsAddCategory() {
         fixture.run(list, "categories");
 
-        assertTrue(fixture.output().contains("add-category"));
+        Assertions.assertTrue(fixture.output().contains("add-category"));
     }
 
     @Test
     void onlyDataChangingCommandsAreMarkedForSaving() {
-        assertTrue(add.changesData());
-        assertTrue(rename.changesData());
-        assertTrue(remove.changesData());
-        assertFalse(list.changesData());
+        Assertions.assertTrue(add.changesData());
+        Assertions.assertTrue(rename.changesData());
+        Assertions.assertTrue(remove.changesData());
+        Assertions.assertFalse(list.changesData());
     }
 }
