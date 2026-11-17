@@ -1,4 +1,5 @@
 # FinanceTracker
+[![CI](https://github.com/CunningLittleVixen/FinanceTracker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CunningLittleVixen/FinanceTracker/actions/workflows/ci.yml)
 
 ![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FCunningLittleVixen%2FFinanceTracker%2Fbadges%2Fcoverage.json)
 
