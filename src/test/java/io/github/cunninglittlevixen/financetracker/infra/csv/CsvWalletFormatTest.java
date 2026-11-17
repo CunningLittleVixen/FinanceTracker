@@ -107,7 +107,7 @@ class CsvWalletFormatTest {
         ValidationException e = assertThrows(ValidationException.class,
                 () -> read("2020-01-05,EXPENSE,Еда,100,,\n"));
 
-        assertTrue(e.getMessage().contains("заголовок"));
+        assertTrue(e.getMessage().contains("Первая строка должна быть заголовком"));
     }
 
     @Test
