@@ -128,4 +128,30 @@ class ApplicationTest {
         assertTrue(out.contains("login"));
         assertFalse(out.contains("add-expense"));
     }
+
+    @Test
+    void jsonSnapshotMovesBetweenUsers() {
+        Path backup = tempDir.resolve("backup.json");
+        run("register", "anna", "secret1", "add-category Зарплата",
+                "add-income Зарплата 1000", "export \"" + backup + "\"", "exit");
+
+        String out = run("register", "boris", "secret2", "import \"" + backup + "\"",
+                "report", "exit");
+
+        assertTrue(out.contains("Созданы категории: Зарплата."));
+        assertTrue(out.contains("Общий доход: 1,000.00"));
+    }
+
+    @Test
+    void csvExportCanBeImportedAgain() {
+        Path file = tempDir.resolve("ops.csv");
+        run("register", "anna", "secret1", "add-category Зарплата",
+                "add-income Зарплата 1000", "export \"" + file + "\"", "exit");
+
+        String out = run("register", "boris", "secret2", "import \"" + file + "\"",
+                "report", "exit");
+
+        assertTrue(out.contains("добавлено операций — 1"));
+        assertTrue(out.contains("Общий доход: 1,000.00"));
+    }
 }
