@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,7 +18,7 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - name: Build, test and check coverage
+      - name: Build, test, lint and check coverage
         run: |
           chmod +x mvnw
           ./mvnw -B verify
@@ -25,3 +28,30 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco
+      - name: Publish coverage badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          PCT=$(awk -F, 'NR>1{m+=$8;c+=$9} END{printf "%.0f", 100*c/(m+c)}' target/site/jacoco/jacoco.csv)
+          if [ "$PCT" -ge 80 ]; then COLOR=brightgreen
+          elif [ "$PCT" -ge 60 ]; then COLOR=yellowgreen
+          elif [ "$PCT" -ge 50 ]; then COLOR=yellow
+          else COLOR=red; fi
+          REMOTE="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$REMOTE" badges >/dev/null 2>&1; then
+            git clone --depth 1 --branch badges "$REMOTE" badges-dir
+          else
+            mkdir badges-dir
+            git -C badges-dir init -b badges
+            git -C badges-dir remote add origin "$REMOTE"
+          fi
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}\n' "$PCT" "$COLOR" > badges-dir/coverage.json
+          cd badges-dir
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coverage.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: update coverage badge"
+          git push origin badges
