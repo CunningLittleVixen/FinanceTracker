@@ -34,6 +34,13 @@ import io.github.cunninglittlevixen.financetracker.infra.Pbkdf2PasswordHasher;
 import io.github.cunninglittlevixen.financetracker.infra.json.JsonMapperFactory;
 import io.github.cunninglittlevixen.financetracker.infra.json.JsonUserRepository;
 import io.github.cunninglittlevixen.financetracker.infra.json.JsonWalletRepository;
+import io.github.cunninglittlevixen.financetracker.cli.ExportCommand;
+import io.github.cunninglittlevixen.financetracker.cli.ImportCommand;
+import io.github.cunninglittlevixen.financetracker.core.service.FormatRegistry;
+import io.github.cunninglittlevixen.financetracker.core.service.ImportService;
+import io.github.cunninglittlevixen.financetracker.infra.csv.CsvWalletFormat;
+import io.github.cunninglittlevixen.financetracker.infra.json.JsonWalletFormat;
+import java.util.List;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
@@ -60,6 +67,9 @@ public class Application {
         BudgetService budgets = new BudgetService();
         OperationService operations = new OperationService();
         TransferService transfers = new TransferService(users, wallets);
+        FormatRegistry formats =
+                new FormatRegistry(List.of(new CsvWalletFormat(), new JsonWalletFormat(mapper)));
+        ImportService importService = new ImportService();
 
         CommandRegistry registry = new CommandRegistry();
         registry.register(new HelpCommand(registry));
@@ -77,6 +87,8 @@ public class Application {
         registry.register(new TransferCommand(transfers, notifications));
         registry.register(new ReportCommand(statistics, notifications));
         registry.register(new HistoryCommand(statistics));
+        registry.register(new ExportCommand(formats));
+        registry.register(new ImportCommand(formats, importService));
         registry.register(new ExitCommand());
 
         new CommandLoop(Terminal.forStreams(in, out), new Session(), registry, wallets).run();
