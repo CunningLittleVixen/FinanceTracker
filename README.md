@@ -1,5 +1,7 @@
 # FinanceTracker
 
+![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FCunningLittleVixen%2FFinanceTracker%2Fbadges%2Fcoverage.json)
+
 Консольное приложение для управления личными финансами.
 
 ## Запуск
